@@ -1,34 +1,136 @@
-function generateId() {
-  return 'id-' + Math.random().toString(36).slice(2, 10);
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background-color: #021018;
+      color: #cfefff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
 
-function fixIdInCookie() {
-  const cookie = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('localaccount='))
-    ?.split('=')[1];
+    .login-box {
+      background-color: #031a2a;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 170, 255, 0.2);
+      width: 320px;
+    }
 
-  if (!cookie) {
-    console.warn('No localaccount cookie found.');
-    return;
-  }
+    h1 {
+      margin-bottom: 16px;
+      font-size: 22px;
+      color: #00aaff;
+      text-align: center;
+    }
 
-  let account;
-  try {
-    account = JSON.parse(decodeURIComponent(cookie));
-  } catch (e) {
-    console.error('Cookie is corrupted:', e);
-    return;
-  }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: none;
+      border-radius: 6px;
+      background-color: #072a3f;
+      color: #cfefff;
+    }
 
-  if (!account.id) {
-    account.id = generateId();
-    const expires = new Date(Date.now() + 365 * 864e5).toUTCString();
-    document.cookie = `localaccount=${encodeURIComponent(JSON.stringify(account))}; expires=${expires}; path=/`;
-    console.log('ID fixed and updated:', account.id);
-  } else {
-    console.log('ID already exists:', account.id);
-  }
-}
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background-color: #00aaff;
+      color: #001;
+      font-weight: bold;
+      cursor: pointer;
+    }
 
-fixIdInCookie();
+    .message {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #7fbfdc;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>Login</h1>
+    <input id="username" placeholder="Username" />
+    <input id="password" type="password" placeholder="Password" />
+    <input id="displayname" placeholder="Display Name" />
+    <button id="login-btn">Login</button>
+    <div class="message" id="message"></div>
+  </div>
+
+  <script>
+    const message = document.getElementById('message');
+    const loginBtn = document.getElementById('login-btn');
+
+    function getCookie(name) {
+      const cookie = document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='));
+      return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : null;
+    }
+
+    function setCookie(name, value, days = 365) {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+    }
+
+    function generateId() {
+      return 'id-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    function ensureAccountId(account) {
+      if (!account.id) {
+        account.id = generateId();
+        setCookie('localaccount', JSON.stringify(account));
+      }
+      return account;
+    }
+
+    const existing = getCookie('localaccount');
+    if (existing) {
+      try {
+        const account = ensureAccountId(JSON.parse(existing));
+        message.textContent = `Welcome ${account.displayname}! Redirecting...`;
+        setTimeout(() => location.href = 'home.html', 1200);
+      } catch {
+        message.textContent = 'Corrupt cookie. Please log in again.';
+      }
+    }
+
+    loginBtn.addEventListener('click', () => {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const displayname = document.getElementById('displayname').value.trim();
+
+      if (!username || !password || !displayname) {
+        message.textContent = 'Please fill all fields.';
+        return;
+      }
+
+      const account = {
+        username,
+        pass: password,
+        displayname,
+        id: generateId()
+      };
+
+      setCookie('localaccount', JSON.stringify(account));
+      message.textContent = `Welcome ${displayname}! Redirecting...`;
+      setTimeout(() => location.href = 'home.html', 1200);
+    });
+  </script>
+</body>
+</html>
